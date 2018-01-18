@@ -60,15 +60,12 @@ class LDC1612:
         return
 
     def read_channels(self):
+        """Read inductance data channels, return data and error flags."""
         # Conversion data must be read MSB-first!
-        ch0_msb = self.bus.read_i2c_block_data(
-            self.address, self.LDC1612_DATA_MSB_CH0, 2)
-        ch0_lsb = self.bus.read_i2c_block_data(
-            self.address, self.LDC1612_DATA_LSB_CH0, 2)
-        ch1_msb = self.bus.read_i2c_block_data(
-            self.address, self.LDC1612_DATA_MSB_CH1, 2)
-        ch1_lsb = self.bus.read_i2c_block_data(
-            self.address, self.LDC1612_DATA_LSB_CH1, 2)
+        ch0_msb = self.get_register(self.LDC1612_DATA_MSB_CH0)
+        ch0_lsb = self.get_register(self.LDC1612_DATA_LSB_CH0)
+        ch1_msb = self.get_register(self.LDC1612_DATA_MSB_CH1)
+        ch1_lsb = self.get_register(self.LDC1612_DATA_LSB_CH1)
         # Assemble output values
         ch0_int = ((ch0_msb << 16) + ch0_lsb) & 0x0FFFFFFF
         ch1_int = ((ch1_msb << 16) + ch1_lsb) & 0x0FFFFFFF
