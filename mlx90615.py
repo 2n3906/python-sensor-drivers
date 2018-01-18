@@ -6,11 +6,10 @@ __author__ = 'Scott Johnston'
 __version__ = '0.0.1'
 
 import smbus2
+import crcmod
 import time
 
-# TODO:
-# * test RAW IR, TA, TO with negative numbers! word_data is a uint16.
-# * fix register writing, because PEC code isn't being created by smbus2.
+# TODO: Fix register writing, because PEC code isn't being created by smbus2.
 
 
 class MLX90615:
@@ -19,7 +18,7 @@ class MLX90615:
     # Register addresses (0x1x = EEPROM, 0x2x = RAM)
     MLX90615_CONFIG = 0x12
     MLX90615_EMISSIVITY = 0x13
-    MLX90515_ID1 = 0x1E
+    MLX90615_ID1 = 0x1E
     MLX90615_ID2 = 0x1F
     MLX90615_RAWIR = 0x25
     MLX90615_TA = 0x26
@@ -34,7 +33,13 @@ class MLX90615:
         return self.bus.read_word_data(self.address, register)
 
     def set_register(self, register, value):
-        return self.bus.write_word_data(self.address, register, value)
+        crc8 = crcmod.predefined.mkPredefinedCrcFun('crc-8')
+        value_msb = (value & 0xFF00) >> 8
+        value_lsb = value & 0xFF
+        crcval = crc8(
+            bytearray([(self.address << 1), register, value_lsb, value_msb]))
+        print("TODO: Fix register setting, which requires SMBus PEC support.")
+        return self.bus.write_i2c_block_data(self.address, register, [value_lsb, value_msb, crcval])
 
     def get_ambient_temperature(self):
         """Reads ambient temperature in deg C."""
@@ -58,7 +63,7 @@ class MLX90615:
     @staticmethod
     def _calculate_temperature(raw):
         """Converts temperature register value to degrees C."""
-        return (raw * 0.02) - 273.15
+        return round((raw * 0.02) - 273.15, 3)
 
     @property
     def emissivity(self):
@@ -72,11 +77,15 @@ class MLX90615:
         data = round(16384 * value)
         return self.set_register(self.MLX90615_EMISSIVITY, data)
 
+
 if __name__ == '__main__':
     try:
         with MLX90615() as mlx90615:
-            print("Object temperature (deg C) : {}".format(mlx90615.get_object_temperature()))
-            print("Ambient temperature (deg C): {}".format(mlx90615.get_ambient_temperature()))
-            print("Emissivity calibration (ε) : {}".format(mlx90615.emissivity))
+            print("Object temperature (deg C) : {}".format(
+                mlx90615.get_object_temperature()))
+            print("Ambient temperature (deg C): {}".format(
+                mlx90615.get_ambient_temperature()))
+            print("Emissivity calibration (ε) : {}".format(
+                mlx90615.emissivity))
     except IOError:
         print("Error creating connection to i2c.")
