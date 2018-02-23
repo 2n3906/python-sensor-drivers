@@ -73,6 +73,25 @@ class LDC1612:
         ch1_err = bool(ch1_int & 0xF0000000)
         return ch0_int, ch1_int, ch0_err, ch1_err
 
+    @property
+    def idrive_ch0(self):
+        return (self.get_register(self.LDC1612_DRIVE_CURRENT_CH0) & 0xF800) >> 11
+
+    @idrive_ch0.setter
+    def idrive_ch0(self, value):
+        if 0 > value > 31:
+            raise ValueError("IDRIVE out of range.")
+        self.set_register(self.LDC1612_DRIVE_CURRENT_CH0, (value << 11))
+
+    @property
+    def idrive_ch1(self):
+        return (self.get_register(self.LDC1612_DRIVE_CURRENT_CH1) & 0xF800) >> 11
+
+    @idrive_ch1.setter
+    def idrive_ch1(self, value):
+        if 0 > value > 31:
+            raise ValueError("IDRIVE out of range.")
+        self.set_register(self.LDC1612_DRIVE_CURRENT_CH1, (value << 11))
 
 if __name__ == '__main__':
     try:
